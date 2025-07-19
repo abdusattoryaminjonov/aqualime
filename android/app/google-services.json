@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "144096810767",
+    "project_id": "aqualime-cdbdf",
+    "storage_bucket": "aqualime-cdbdf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144096810767:android:2bb21f66fa6886367ad07a",
+        "android_client_info": {
+          "package_name": "aqualime.example.com.aqualime"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnwuyQa3RU04nMSQcwmtjAo1Xwxl151A8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
