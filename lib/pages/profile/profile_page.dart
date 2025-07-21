@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../models/employees.dart';
 import '../login/login_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -14,25 +16,27 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? userData;
 
+  Employee? employee;
+
+
+
   @override
   void initState() {
     super.initState();
-    loadUserData();
+    loadEmployee();
   }
 
-  Future<void> loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = prefs.getString('user_data');
-    if (userJson != null) {
+  Future<void> loadEmployee() async {
+    final employeeBox = Hive.box<Employee>('employees');
+    if (employeeBox.isNotEmpty) {
       setState(() {
-        userData = jsonDecode(userJson);
+        employee = employeeBox.values.first;
       });
     }
   }
 
   void logOut(BuildContext context) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('user_data');
+    await Hive.box<Employee>('employees').clear();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => LoginPage()),
@@ -64,7 +68,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final userName = userData?['name'] ?? "Foydalanuvchi";
+
+    final userName = employee?.name ?? "Foydalanuvchi";
+
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -112,10 +118,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 SingleChildScrollView(
                   child: Column(
                     children: [
-                      _profileButton("Maxsulot", () {
+                      _profileButton("Zakaz : ${employee?.zakaz.toString()}", () {
                         // Maxsulot uchun funksiyani yozing
                       }),
-                      _profileButton("Tarix", () {
+                      _profileButtonQ("Summa : ${employee!.naqd + employee!.karta} ",employee!.qarz, () {
                         // Tarix uchun funksiyani yozing
                       }),
                       _profileButton("Sozlamalar", () {
@@ -149,6 +155,33 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Text(
           text,
           style: TextStyle(color: Colors.blue, fontSize: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _profileButtonQ(String text, int qarz , VoidCallback onPressed) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: TextButton(
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              text,
+              style: TextStyle(color: Colors.blue, fontSize: 16),
+            ),
+            qarz > 0 ? Text(
+              "+ $qarz",
+              style: TextStyle(color: Colors.red, fontSize: 16),
+            ) : SizedBox.shrink(),
+          ],
         ),
       ),
     );

@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive/hive.dart';
 
+import '../../models/employees.dart';
 import '../login/login_page.dart';
 import 'button_navigation_bar.dart';
 
@@ -34,10 +35,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   void _checkUser() async {
     await Future.delayed(Duration(seconds: 3));
 
-    final prefs = await SharedPreferences.getInstance();
-    final userString = prefs.getString('user_data');
+    final employeeBox = await Hive.openBox<Employee>('employees');
 
-    if (userString == null) {
+    if (employeeBox.isEmpty) {
       Get.offAll(() => LoginPage());
     } else {
       Get.offAll(() => ButtonsNavigationBar());

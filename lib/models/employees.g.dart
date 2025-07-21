@@ -1,5 +1,10 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'employees.dart';
+
+// **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
 
 class EmployeeAdapter extends TypeAdapter<Employee> {
   @override
@@ -21,14 +26,17 @@ class EmployeeAdapter extends TypeAdapter<Employee> {
       naqd: fields[6] as int,
       karta: fields[7] as int,
       qarz: fields[8] as int,
-      createdAt: fields[9] as DateTime,
+      ortiqchapul: fields[9] as int,
+      kassa_sanasi: fields[10] as String,
+      createdAt: fields[11] as DateTime,
+      id: fields[12] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, Employee obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.tumanId)
       ..writeByte(1)
@@ -48,7 +56,13 @@ class EmployeeAdapter extends TypeAdapter<Employee> {
       ..writeByte(8)
       ..write(obj.qarz)
       ..writeByte(9)
-      ..write(obj.createdAt);
+      ..write(obj.ortiqchapul)
+      ..writeByte(10)
+      ..write(obj.kassa_sanasi)
+      ..writeByte(11)
+      ..write(obj.createdAt)
+      ..writeByte(12)
+      ..write(obj.id);
   }
 
   @override

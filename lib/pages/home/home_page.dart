@@ -1,10 +1,12 @@
 import 'package:aqualime/pages/home/all_orders.dart';
+import 'package:aqualime/pages/home/drawer_section.dart';
 import 'package:aqualime/services/log_service.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../models/employees.dart';
 import '../../services/http_service.dart';
 import '../../models/orders_model.dart';
 import '../../widgets/car_loading_widget.dart';
@@ -18,7 +20,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final HttpService httpService = HttpService();
+
+  final employeeBox = Hive.box<Employee>('employees');
+
   late Future<OrdersModel> _ordersFuture;
+  late bool updatedUser;
   int currentValue = 0;
   late int totalCarLength = 0;
   final int total = 0;
@@ -35,6 +41,7 @@ class _HomePageState extends State<HomePage> {
   late int totalAtmen = 0;
   late int umumiyQarz = 0;
   late int umumiyPul = 0;
+  late int umumiyOrtiqchaPul = 0;
 
   void saveValues(int currentValue, int totalCarLength) {
     var box = Hive.box('myCache');
@@ -52,14 +59,9 @@ class _HomePageState extends State<HomePage> {
     return box.get('totalCarLength', defaultValue: 0);
   }
 
-  void clearCache() {
-    var box = Hive.box('myCache');
-    box.clear();
-  }
+
 
   void moveCar() {
-
-
     if (currentValue < totalCarLength) {
       currentValue++;
       saveValues(currentValue, totalCarLength);
@@ -385,7 +387,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _ordersFuture = httpService.fetchOrders();
-    _ordersFuture.then((ordersModel) {
+    _ordersFuture.then((ordersModel) async {
       final todayOrders = ordersModel.orders;
       final int zakazLength = todayOrders.length;
 
@@ -407,6 +409,11 @@ class _HomePageState extends State<HomePage> {
       final int qarz = todayOrders.fold(
         0,
             (sum, order) => order.done != -1 && order.done != 0 ? sum + int.parse(order.summaQarz) : sum,
+      );
+
+      final int ortiqchapul = todayOrders.fold(
+        0,
+            (sum, order) => order.ortiqchapul,
       );
 
       final int naxt = todayOrders.fold(
@@ -436,17 +443,45 @@ class _HomePageState extends State<HomePage> {
       } else {
         saveValues(0,zakazLength);
       }
+      final employee = employeeBox.values.first;
+
+      employee.tumanId = 1;
+      employee.zakaz = zakazLength;
+      employee.tarqatildi = tarqatildi;
+      employee.atmen = atmen;
+      employee.naqd = naxt;
+      employee.karta = karta;
+      employee.qarz = qarz;
+      employee.ortiqchapul = ortiqchapul;
+      employee.kassa_sanasi = todayOrders.first.sana.toString();
+
+      await employee.save();
+
+      updatedUser = await httpService.updateEmployee(
+          id: employee.id,
+        tuman_id: employee.tumanId,
+          name: employee.name,
+          password: employee.password,
+          qarz: employee.qarz,
+          naqd: employee.naqd,
+          karta: employee.karta,
+          zakaz: employee.zakaz,
+        tarqatildi: employee.tarqatildi,
+        ortiqchaPul: employee.ortiqchapul,
+        kassaSanasi: employee.kassa_sanasi,
+        atmen: employee.atmen,
+      );
 
       setState(() {
         totalZakaz = zakazLength;
-        totalCarLength = totalZakaz;
-        water_count = tarqatildi1;
         totalTarqatildi = tarqatildi;
         totalNaxt = naxt;
-        totalKarta = karta;
-        umumiyQarz = qarz;
+        totalKarta  = karta;
+        umumiyQarz  = qarz;
         totalAtmen = atmen;
-        umumiyPul = totalNaxt + totalKarta;
+        water_count = tarqatildi1;
+        umumiyOrtiqchaPul = ortiqchapul;
+        umumiyPul = totalNaxt +totalKarta;
       });
     });
   }
@@ -455,7 +490,7 @@ class _HomePageState extends State<HomePage> {
   void _refreshData() {
     setState(() {
       _ordersFuture = httpService.fetchOrders();
-      _ordersFuture.then((ordersModel) {
+      _ordersFuture.then((ordersModel) async {
         final todayOrders = ordersModel.orders;
         final int zakazLength = todayOrders.length;
 
@@ -479,6 +514,11 @@ class _HomePageState extends State<HomePage> {
               (sum, order) => order.done != -1 && order.done != 0 ? sum + int.parse(order.summaQarz) : sum,
         );
 
+        final int ortiqchapul = todayOrders.fold(
+          0,
+              (sum, order) => order.ortiqchapul,
+        );
+
         final int naxt = todayOrders.fold(
           0,
               (sum, order) {
@@ -498,7 +538,34 @@ class _HomePageState extends State<HomePage> {
             return sum;
           },
         );
+        final employee = employeeBox.values.first;
 
+        employee.tumanId = 1;
+        employee.zakaz = zakazLength;
+        employee.tarqatildi = tarqatildi;
+        employee.atmen = atmen;
+        employee.naqd = naxt;
+        employee.karta = karta;
+        employee.qarz = qarz;
+        employee.ortiqchapul = ortiqchapul;
+        employee.kassa_sanasi = todayOrders.first.sana.toString();
+
+        await employee.save();
+
+        updatedUser = await httpService.updateEmployee(
+          id: employee.id,
+          tuman_id: employee.tumanId,
+          name: employee.name,
+          password: employee.password,
+          qarz: employee.qarz,
+          naqd: employee.naqd,
+          karta: employee.karta,
+          zakaz: employee.zakaz,
+          tarqatildi: employee.tarqatildi,
+          ortiqchaPul: employee.ortiqchapul,
+          kassaSanasi: employee.kassa_sanasi,
+          atmen: employee.atmen,
+        );
 
         setState(() {
           totalZakaz = zakazLength;
@@ -508,6 +575,7 @@ class _HomePageState extends State<HomePage> {
           umumiyQarz  = qarz;
           totalAtmen = atmen;
           water_count = tarqatildi1;
+          umumiyOrtiqchaPul = ortiqchapul;
           umumiyPul = totalNaxt +totalKarta;
         });
       });
@@ -550,130 +618,16 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      drawer: Drawer(
-        backgroundColor: Colors.white,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blueAccent),
-              child: Text(
-                'AquaLime',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.water_drop,
-                size: 30,
-                color: Colors.blueAccent,
-              ),
-              title: Text('Zakaz: $totalZakaz '),
-            ),
-            ListTile(
-              leading: const Icon(
-                Iconsax.truck_fast,
-                size: 30,
-                color: Colors.blueAccent,
-              ),
-              title: Text('Tarqatildi: $totalTarqatildi/$water_count'),
-            ),
-            ListTile(
-              leading: const Icon(
-                Iconsax.truck_remove,
-                size: 30,
-                color: Colors.red,
-              ),
-              title: Text('Bekor qilindi: $totalAtmen'),
-            ),
-            ListTile(
-              leading: const Icon(
-                Iconsax.money,
-                size: 30,
-                color: Colors.blueAccent,
-              ),
-              title:Text('Naxt: ${totalNaxt} so\'m'),
-            ),
-            ListTile(
-              leading: const Icon(
-                Iconsax.card,
-                size: 30,
-                color: Colors.blueAccent,
-              ),
-              title:  Text('Plastik: ${totalKarta} so\'m'),
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.money_off,
-                size: 30,
-                color: Colors.red,
-              ),
-              title: Text('Qarz: ${umumiyQarz} so\'m'),
-            ),
-            ListTile(
-              leading: const Icon(
-                Iconsax.calculator,
-                size: 30,
-                color: Colors.blueAccent,
-              ),
-              title: Text('Summa: ${umumiyPul} so\'m'),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      title: const Text(
-                        "KASSA TOPSHIRISH",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      content: Text(
-                        "Bugun sotilgan suvlarning umumiy summasi:\n\n${umumiyPul} so'm",
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(); // AlertDialog ni yopish
-                          },
-                          child: const Text(
-                            "Cancel",
-                            style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            clearCache();
-                            Navigator.of(context).pop(); // AlertDialog ni yopish
-                            Navigator.of(context).pop(); // Drawer ni yopish
-                          },
-                          child: const Text(
-                            "OK",
-                            style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                icon: const Icon(Iconsax.money_send, color: Colors.white),
-                label: const Text(
-                  'KASSA',
-                  style: TextStyle(color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 48),
-                  backgroundColor: Colors.blueAccent,
-                ),
-              ),
-            ),
-          ],
-        ),
+      drawer: HomeDrawer(
+        totalZakaz: totalZakaz,
+        totalTarqatildi: totalTarqatildi,
+        water_count: water_count,
+        totalAtmen: totalAtmen,
+        totalNaxt: totalNaxt,
+        totalKarta: totalKarta,
+        umumiyQarz: umumiyQarz,
+        ortiqchaPul: umumiyOrtiqchaPul,
+        umumiyPul: umumiyPul
       ),
       body: FutureBuilder<OrdersModel>(
         future: _ordersFuture,

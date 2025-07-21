@@ -1,9 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../models/employees.dart';
 import '../../services/http_service.dart';
 import '../home/button_navigation_bar.dart';
 
@@ -39,10 +38,17 @@ class _LoginPageState extends State<LoginPage> {
       isLoading = false;
     });
 
+
     if (result['success']) {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      String userJson = jsonEncode(result['user']);
-      await prefs.setString('user_data', userJson);
+
+      Map<String, dynamic> userData = Map<String, dynamic>.from(result['user']);
+
+      final employeeBox = Hive.box<Employee>('employees');
+
+      Employee employee = Employee.fromJson(userData);
+
+      await employeeBox.clear();
+      await employeeBox.add(employee);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

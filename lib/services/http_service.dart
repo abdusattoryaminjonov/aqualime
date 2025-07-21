@@ -75,21 +75,19 @@ class HttpService {
 
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 200) {
-        LogService.i("✅ Status 200: $data");
-        return {'success': true, 'data': data};
-      } else if (response.statusCode == 401) {
-        LogService.i("⚠️ Status 401: $data");
-        return {'success': false, 'message': data['message'] ?? 'Unauthorized'};
-      } else {
-        LogService.i("❌ Status ${response.statusCode}: $data");
-        return {'success': false, 'message': data['message'] ?? 'Xatolik yuz berdi'};
-      }
+      LogService.i("📥 Javob: $data");
+
+      return Map<String, dynamic>.from(data);
+
     } catch (e) {
-      LogService.i("❗ Exception: $e");
-      return {'success': false, 'message': 'Serverga ulanishda xatolik: $e'};
+      LogService.e("❗ Exception: $e");
+      return {
+        'success': false,
+        'message': 'Serverga ulanishda xatolik: $e',
+      };
     }
   }
+
 
 
 
@@ -152,6 +150,55 @@ class HttpService {
       return false; // fallback
     }
   }
+
+  Future<bool> updateEmployee({
+    required int id,
+    required int tuman_id,
+    required String name,
+    required String password,
+    required int zakaz,
+    required int tarqatildi,
+    required int atmen,
+    required int naqd,
+    required int karta,
+    required int qarz,
+    required int ortiqchaPul,
+    required String kassaSanasi,
+  }) async {
+    final uri = Uri.parse("$BASE_URL/api/update-employee/");
+
+    final body = jsonEncode({
+      "id": id,
+      "tuman_id": tuman_id,
+      "name": name,
+      "password": password,
+      "zakaz": zakaz,
+      "tarqatildi": tarqatildi,
+      "atmen": atmen,
+      "naqd": naqd,
+      "karta": karta,
+      "qarz": qarz,
+      "ortiqchapul": ortiqchaPul,
+      "kassa-sanasi": kassaSanasi, // format: "2025-07-21"
+    });
+
+    final response = await http.post(
+      uri,
+      headers: {"Content-Type": "application/json"},
+      body: body,
+    );
+
+    if (response.statusCode == 200) {
+      final result = jsonDecode(response.body);
+      return result['success'] == true;
+    } else {
+      print("Xatolik: ${response.statusCode}");
+      return false;
+    }
+  }
+
+
+
 
 
   static void _throwException(http.Response response) {

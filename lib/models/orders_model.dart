@@ -46,6 +46,7 @@ class Order {
   String summa;
   String summaTolov;
   String summaQarz;
+  int ortiqchapul;
   int done;
   int type;
 
@@ -67,6 +68,7 @@ class Order {
     required this.summa,
     required this.summaTolov,
     required this.summaQarz,
+    required this.ortiqchapul,
     required this.done,
     required this.type,
   });
@@ -89,6 +91,7 @@ class Order {
     summa: json["summa"],
     summaTolov: json["summa_tolov"],
     summaQarz: json["summa_qarz"],
+    ortiqchapul: json["ortiqchapul"] ?? 0,
     done: json["done"],
     type: json["type"] ?? 0,
   );
@@ -111,6 +114,7 @@ class Order {
     "summa": summa,
     "summa_tolov": summaTolov,
     "summa_qarz": summaQarz,
+    "ortiqchapul": ortiqchapul,
     "done": done,
     "type": type,
   };
