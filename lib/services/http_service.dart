@@ -24,9 +24,47 @@ class HttpService {
     }
     return response;
   }
+
+  Future<http.Response> httpGet0Order() async {
+    final url = Uri.parse("$BASE_URL/api/get-0orders/");
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+      }),
+    );
+
+    LogService.e(response.body.toString());
+
+    if (response.statusCode >= 400) {
+      _throwException(response);
+    }
+    return response;
+  }
+
+
   static Future<Map<String, dynamic>> decodeResponse(String body) async {
     return json.decode(body) as Map<String, dynamic>;
   }
+
+
+  Future<OrdersModel> fetch0Orders() async {
+    final response = await http.get(
+      Uri.parse("$BASE_URL/api/get-0orders/"),
+      headers: {"Content-Type": "application/json"},
+    );
+
+    LogService.e(response.body.toString());
+
+    if (response.statusCode == 200) {
+      final ordersModel = ordersModelFromJson(response.body);
+      return ordersModel;
+    } else {
+      throw Exception("Zakazlar olinmadi: ${response.statusCode}");
+    }
+  }
+
 
   Future<OrdersModel> fetchOrders() async {
     final response = await http.get(
@@ -88,6 +126,43 @@ class HttpService {
     }
   }
 
+  Future<bool> httpKassa(int id) async {
+    final url = Uri.parse("$BASE_URL/api/kassa/");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'id': id,
+        }),
+      );
+
+      LogService.i("📥 Javob: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data is bool) {
+          return data;
+        } else {
+          LogService.e("❗ Kutilmagan format: $data");
+          return false;
+        }
+      } else {
+        LogService.e("❗ Status: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      LogService.e("❗ Exception: $e");
+      return false;
+    }
+  }
+
+
+
 
 
 
@@ -119,6 +194,7 @@ class HttpService {
     required int summaTolov,
     required int summaQarz,
     required String typeOfPayment,
+    required int ortiqchaPul,
     required int done,
   }) async {
     final queryParameters = {
@@ -130,6 +206,7 @@ class HttpService {
       'summa_tolov': summaTolov.toString(),
       'summa_qarz': summaQarz.toString(),
       'type_of_payment': typeOfPayment,
+      'ortiqchapul' : ortiqchaPul.toString(),
       'done': done.toString(),
     };
 

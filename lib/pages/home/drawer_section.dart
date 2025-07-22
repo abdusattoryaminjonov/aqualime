@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
+import '../../services/http_service.dart';
+
 class HomeDrawer extends StatelessWidget{
+
   final int totalZakaz;
   final int totalTarqatildi;
   final int water_count;
@@ -12,6 +15,9 @@ class HomeDrawer extends StatelessWidget{
   final int umumiyQarz;
   final int ortiqchaPul;
   final int umumiyPul;
+
+  final HttpService httpService;
+  final employee;
 
   const HomeDrawer ({
     super.key,
@@ -23,11 +29,27 @@ class HomeDrawer extends StatelessWidget{
     required this.totalKarta,
     required this.umumiyQarz,
     required this.ortiqchaPul,
-    required this.umumiyPul
+    required this.umumiyPul,
+    required this.httpService,
+    required this.employee
 });
 
 
-  void clearCache() {
+  Future<void> clearCache() async {
+    await httpService.updateEmployee(
+      id: employee.id,
+      tuman_id: employee.tumanId,
+      name: employee.name,
+      password: employee.password,
+      qarz: 0,
+      naqd: 0,
+      karta: 0,
+      zakaz: -1,
+      tarqatildi: 0,
+      ortiqchaPul: 0,
+      kassaSanasi: employee.kassa_sanasi,
+      atmen: 0
+    );
     var box = Hive.box('myCache');
     box.clear();
   }
@@ -40,12 +62,18 @@ class HomeDrawer extends StatelessWidget{
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
-          const DrawerHeader(
+           DrawerHeader(
             decoration: BoxDecoration(color: Colors.blueAccent),
-            child: Text(
-              'AquaLime',
-              style: TextStyle(color: Colors.white, fontSize: 24),
+            child: SizedBox.expand(
+              child: Image.asset(
+                'assets/images/drawerImage.png',
+                alignment: Alignment.center,
+              ),
             ),
+            // child: Text(
+            //   'AquaLime',
+            //   style: TextStyle(color: Colors.white, fontSize: 24),
+            // ),
           ),
           ListTile(
             leading: const Icon(

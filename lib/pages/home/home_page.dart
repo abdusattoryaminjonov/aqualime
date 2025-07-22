@@ -4,6 +4,7 @@ import 'package:aqualime/services/log_service.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:lottie/lottie.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/employees.dart';
@@ -23,7 +24,9 @@ class _HomePageState extends State<HomePage> {
 
   final employeeBox = Hive.box<Employee>('employees');
 
-  late Future<OrdersModel> _ordersFuture;
+  Future<OrdersModel>? _ordersFuture;
+
+  late bool updateKassa;
   late bool updatedUser;
   int currentValue = 0;
   late int totalCarLength = 0;
@@ -79,6 +82,7 @@ class _HomePageState extends State<HomePage> {
     int qoldi = 0;
     int left = 0;
     int summa = 0;
+    int ortiqchaPul = order.ortiqchapul;
     int qarz = 0;
     bool initialized = false;
     String selectedPaymentType = 'naqd';
@@ -133,44 +137,54 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
-                      controller: givedBottleController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: "Beriladigan kapsula",
-                        prefixIcon: Icon(Icons.water_drop_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (_) {
-                        final gived = int.tryParse(givedBottleController.text) ?? 0;
-                        final returned = int.tryParse(returnedBottleController.text) ?? 0;
-                        if (returned > gived) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text("❗️Qaytarilgan kapsula soni berilgandan ko‘p bo‘lishi mumkin emas."),
-                              backgroundColor: Colors.red,
-                              duration: Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                              margin: EdgeInsets.all(10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                              controller: givedBottleController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: "Beriladigan K",
+                                prefixIcon: Icon(Icons.water_drop_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: (_) {
+                                // final gived = int.tryParse(givedBottleController.text) ?? 0;
+                                // final returned = int.tryParse(returnedBottleController.text) ?? 0;
+                                // if (returned > gived) {
+                                //   ScaffoldMessenger.of(context).showSnackBar(
+                                //     SnackBar(
+                                //       content: Text("❗️Qaytarilgan kapsula soni berilgandan ko‘p bo‘lishi mumkin emas."),
+                                //       backgroundColor: Colors.red,
+                                //       duration: Duration(seconds: 2),
+                                //       behavior: SnackBarBehavior.floating,
+                                //       margin: EdgeInsets.all(10),
+                                //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                //     ),
+                                //   );
+                                //   return;
+                                //}
+                                updateCalculatedValues();
+                              }
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: returnedBottleController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: "Olinadigan K",
+                              prefixIcon: Icon(Icons.undo),
+                              border: OutlineInputBorder(),
                             ),
-                          );
-                          return;
-                        }
-                        updateCalculatedValues();
-                      }
+                            onChanged: (_) => updateCalculatedValues(),
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 12),
-                    TextField(
-                      controller: returnedBottleController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: "Qaytarilgan kapsula",
-                        prefixIcon: Icon(Icons.undo),
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (_) => updateCalculatedValues(),
-                    ),
+
                     SizedBox(height: 12),
                     TextField(
                       controller: paidAmountController,
@@ -220,10 +234,15 @@ class _HomePageState extends State<HomePage> {
                       leading: Icon(Icons.attach_money),
                       title: Text("Umumiy summa: $summa so'm"),
                     ),
+
                     ListTile(
                       leading: Icon(Icons.warning_amber_outlined),
                       title: Text("Qarz: $qarz so'm"),
                     ),
+                    ortiqchaPul > 0 ? ListTile(
+                      leading: Icon(Icons.monetization_on_outlined),
+                      title: Text("Qo'shimcha pul: $ortiqchaPul so'm"),
+                    ) : SizedBox.shrink(),
                   ],
                 ),
               ),
@@ -240,6 +259,7 @@ class _HomePageState extends State<HomePage> {
                       summaTolov: int.tryParse(order.summaTolov) ?? 0,
                       summaQarz: int.tryParse(order.summaQarz) ?? 0,
                       typeOfPayment: order.typeOfPayment,
+                      ortiqchaPul: ortiqchaPul,
                       done: -1,
                     );
 
@@ -322,6 +342,7 @@ class _HomePageState extends State<HomePage> {
                       summaTolov: total,
                       summaQarz: debt,
                       typeOfPayment: selectedPaymentType,
+                      ortiqchaPul: ortiqchaPul,
                       done: 1,
                     );
 
@@ -386,8 +407,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _ordersFuture = httpService.fetchOrders();
-    _ordersFuture.then((ordersModel) async {
+    initData();
+  }
+
+  Future<void> initData() async {
+    updateKassa =  await httpService.httpKassa(employeeBox.values.first.id);
+    _ordersFuture = updateKassa == true ? httpService.fetch0Orders() : httpService.fetchOrders();
+    _ordersFuture!.then((ordersModel) async {
       final todayOrders = ordersModel.orders;
       final int zakazLength = todayOrders.length;
 
@@ -420,7 +446,7 @@ class _HomePageState extends State<HomePage> {
         0,
             (sum, order) {
           if (order.done != -1 && order.typeOfPayment == 'naqd') {
-            return sum + int.parse(order.summaTolov);
+            return sum + (int.tryParse(order.summaTolov.toString().trim() ?? '0') ?? 0);
           }
           return sum;
         },
@@ -430,7 +456,7 @@ class _HomePageState extends State<HomePage> {
         0,
             (sum, order) {
           if (order.done != -1 && order.typeOfPayment == 'karta') {
-            return sum + int.parse(order.summaTolov);
+            return sum + (int.tryParse(order.summaTolov.toString().trim() ?? '0') ?? 0);
           }
           return sum;
         },
@@ -458,14 +484,14 @@ class _HomePageState extends State<HomePage> {
       await employee.save();
 
       updatedUser = await httpService.updateEmployee(
-          id: employee.id,
+        id: employee.id,
         tuman_id: employee.tumanId,
-          name: employee.name,
-          password: employee.password,
-          qarz: employee.qarz,
-          naqd: employee.naqd,
-          karta: employee.karta,
-          zakaz: employee.zakaz,
+        name: employee.name,
+        password: employee.password,
+        qarz: employee.qarz,
+        naqd: employee.naqd,
+        karta: employee.karta,
+        zakaz: employee.zakaz,
         tarqatildi: employee.tarqatildi,
         ortiqchaPul: employee.ortiqchapul,
         kassaSanasi: employee.kassa_sanasi,
@@ -481,27 +507,28 @@ class _HomePageState extends State<HomePage> {
         totalAtmen = atmen;
         water_count = tarqatildi1;
         umumiyOrtiqchaPul = ortiqchapul;
-        umumiyPul = totalNaxt +totalKarta;
+        umumiyPul = totalNaxt +totalKarta + umumiyOrtiqchaPul;
       });
     });
   }
 
+  Future<void> _refreshData() async {
+    updateKassa = await httpService.httpKassa(employeeBox.values.first.id);
 
-  void _refreshData() {
     setState(() {
-      _ordersFuture = httpService.fetchOrders();
-      _ordersFuture.then((ordersModel) async {
+      _ordersFuture = updateKassa == true ? httpService.fetch0Orders() : httpService.fetchOrders();
+      _ordersFuture!.then((ordersModel) async {
         final todayOrders = ordersModel.orders;
         final int zakazLength = todayOrders.length;
-
-        final int tarqatildi1 = todayOrders.fold(
-          0,
-              (sum, order) => order.done != -1 ? sum + order.water_count : sum,
-        );
 
         final int tarqatildi = todayOrders.fold(
           0,
               (sum, order) => order.done != -1 ? sum + order.givedBottle : sum,
+        );
+
+        final int tarqatildi1 = todayOrders.fold(
+          0,
+              (sum, order) => order.done != -1 ? sum + order.water_count : sum,
         );
 
         final int atmen = todayOrders.fold(
@@ -523,7 +550,7 @@ class _HomePageState extends State<HomePage> {
           0,
               (sum, order) {
             if (order.done != -1 && order.typeOfPayment == 'naqd') {
-              return sum + int.parse(order.summaTolov);
+              return sum + (int.tryParse(order.summaTolov.toString().trim() ?? '0') ?? 0);
             }
             return sum;
           },
@@ -533,11 +560,19 @@ class _HomePageState extends State<HomePage> {
           0,
               (sum, order) {
             if (order.done != -1 && order.typeOfPayment == 'karta') {
-              return sum + int.parse(order.summaTolov);
+              return sum + (int.tryParse(order.summaTolov.toString().trim() ?? '0') ?? 0);
             }
             return sum;
           },
         );
+
+        var box = Hive.box('myCache');
+        if (box.containsKey('currentValue') && box.containsKey('totalCarLength')) {
+          currentValue = getCurrentValue();
+          totalCarLength = getTotalCarLength();
+        } else {
+          saveValues(0,zakazLength);
+        }
         final employee = employeeBox.values.first;
 
         employee.tumanId = 1;
@@ -576,7 +611,7 @@ class _HomePageState extends State<HomePage> {
           totalAtmen = atmen;
           water_count = tarqatildi1;
           umumiyOrtiqchaPul = ortiqchapul;
-          umumiyPul = totalNaxt +totalKarta;
+          umumiyPul = totalNaxt +totalKarta + umumiyOrtiqchaPul;
         });
       });
     });
@@ -605,10 +640,14 @@ class _HomePageState extends State<HomePage> {
               MaterialPageRoute(builder: (context) => AllOrdersPage()),
             );
           },
-          child: Text(
-            "AquaLime",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          child: SizedBox(
+            width: 170,
+              child: Image.asset('assets/images/aqulimeLogo.png')
           ),
+          // child: Text(
+          //   "AquaLime",
+          //   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          // ),
         ),
         iconTheme: const IconThemeData(color: Colors.white, size: 30),
         actions: [
@@ -627,7 +666,9 @@ class _HomePageState extends State<HomePage> {
         totalKarta: totalKarta,
         umumiyQarz: umumiyQarz,
         ortiqchaPul: umumiyOrtiqchaPul,
-        umumiyPul: umumiyPul
+        umumiyPul: umumiyPul,
+        httpService: httpService,
+        employee: employeeBox.values.first,
       ),
       body: FutureBuilder<OrdersModel>(
         future: _ordersFuture,
@@ -646,12 +687,12 @@ class _HomePageState extends State<HomePage> {
           }
 
           if (!snapshot.hasData || snapshot.data!.orders.isEmpty) {
-            return const Scaffold(
+            return  Scaffold(
               body: Center(
-                child: Text(
-                  "Bugungi zakazlar yo'q",
-                  style: TextStyle(fontSize: 18),
-                ),
+                child: SizedBox(
+                  width: 180,
+                  height: 180,
+                    child: Lottie.asset('assets/lotties/loading.json')),
               ),
             );
           }
