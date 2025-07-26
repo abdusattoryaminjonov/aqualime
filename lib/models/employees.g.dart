@@ -17,7 +17,7 @@ class EmployeeAdapter extends TypeAdapter<Employee> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Employee(
-      tumanId: fields[0] as int,
+      xodim_id: fields[0] as int,
       name: fields[1] as String,
       password: fields[2] as String,
       zakaz: fields[3] as int,
@@ -38,7 +38,7 @@ class EmployeeAdapter extends TypeAdapter<Employee> {
     writer
       ..writeByte(13)
       ..writeByte(0)
-      ..write(obj.tumanId)
+      ..write(obj.xodim_id)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)

@@ -38,7 +38,7 @@ class HomeDrawer extends StatelessWidget{
   Future<void> clearCache() async {
     await httpService.updateEmployee(
       id: employee.id,
-      tuman_id: employee.tumanId,
+        xodim_id: employee.tumanId,
       name: employee.name,
       password: employee.password,
       qarz: 0,

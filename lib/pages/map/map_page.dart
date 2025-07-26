@@ -9,11 +9,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:grouped_action_buttons/action_button.dart';
 import 'package:grouped_action_buttons/expandable_fab.dart';
+import 'package:hive/hive.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:location/location.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:aqualime/services/http_service.dart';
 
+import '../../models/employees.dart';
 import '../../models/orders_model.dart';
 
 class MapPage extends StatefulWidget {
@@ -27,6 +29,8 @@ class _MapPageState extends State<MapPage> {
   LocationData? _currentLocation;
   final Location _location = Location();
   final HttpService httpService = HttpService();
+
+  final employeeBox = Hive.box<Employee>('employees');
 
   int asistent = 0;
   int asistentT = 0;
@@ -192,7 +196,7 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _loadZakazlar() async {
     try {
-      final OrdersModel response = await httpService.fetchOrders();
+      final OrdersModel response = await httpService.fetchOrders(employeeBox.values.first.xodim_id);
 
       final List<Order> orders = response.orders;
 
@@ -223,7 +227,7 @@ class _MapPageState extends State<MapPage> {
             final BitmapDescriptor markerIcon = await createCustomMarkerBitmap(
               markerText,
               order.done,
-              order.type,
+              order.order_type,
             );
 
             _markers.add(

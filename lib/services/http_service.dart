@@ -7,13 +7,14 @@ import '../models/orders_model.dart';
 
 class HttpService {
 
-  Future<http.Response> httpGetOrders() async {
+  Future<http.Response> httpGetOrders(int employeeId) async {
     final url = Uri.parse("$BASE_URL/api/get-orders/");
 
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
+        "employee_id": employeeId,
       }),
     );
 
@@ -25,13 +26,15 @@ class HttpService {
     return response;
   }
 
-  Future<http.Response> httpGet0Order() async {
+
+  Future<http.Response> httpGet0Order(int employeeId) async {
     final url = Uri.parse("$BASE_URL/api/get-0orders/");
 
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
+        "employee_id": employeeId,
       }),
     );
 
@@ -49,9 +52,11 @@ class HttpService {
   }
 
 
-  Future<OrdersModel> fetch0Orders() async {
+  Future<OrdersModel> fetch0Orders(int employeeId) async {
+    final url = Uri.parse("$BASE_URL/api/get-0orders/?employee_id=$employeeId");
+
     final response = await http.get(
-      Uri.parse("$BASE_URL/api/get-0orders/"),
+      url,
       headers: {"Content-Type": "application/json"},
     );
 
@@ -66,14 +71,15 @@ class HttpService {
   }
 
 
-  Future<OrdersModel> fetchOrders() async {
+  Future<OrdersModel> fetchOrders(int employeeId) async {
+    final url = Uri.parse("$BASE_URL/api/get-orders/?employee_id=$employeeId");
+
     final response = await http.get(
-      Uri.parse("$BASE_URL/api/get-orders/"),
+      url,
       headers: {"Content-Type": "application/json"},
     );
 
     LogService.e(response.body.toString());
-
 
     if (response.statusCode == 200) {
       final ordersModel = ordersModelFromJson(response.body);
@@ -230,7 +236,7 @@ class HttpService {
 
   Future<bool> updateEmployee({
     required int id,
-    required int tuman_id,
+    required int xodim_id,
     required String name,
     required String password,
     required int zakaz,
@@ -246,7 +252,7 @@ class HttpService {
 
     final body = jsonEncode({
       "id": id,
-      "tuman_id": tuman_id,
+      "xodim_id": xodim_id,
       "name": name,
       "password": password,
       "zakaz": zakaz,

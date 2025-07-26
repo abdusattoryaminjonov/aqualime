@@ -20,12 +20,12 @@ class _AllOrdersPageState extends State<AllOrdersPage> {
   @override
   void initState() {
     super.initState();
-    _ordersFuture = httpService.fetchOrders();
+    _ordersFuture = httpService.fetchOrders(0);
   }
 
   void _refreshData() {
     setState(() {
-      _ordersFuture = httpService.fetchOrders();
+      _ordersFuture = httpService.fetchOrders(0);
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

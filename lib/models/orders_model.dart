@@ -48,7 +48,8 @@ class Order {
   String summaQarz;
   int ortiqchapul;
   int done;
-  int type;
+  int employee_id;
+  int order_type;
 
   Order({
     required this.id,
@@ -70,7 +71,8 @@ class Order {
     required this.summaQarz,
     required this.ortiqchapul,
     required this.done,
-    required this.type,
+    required this.employee_id,
+    required this.order_type,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) => Order(
@@ -93,7 +95,8 @@ class Order {
     summaQarz: json["summa_qarz"],
     ortiqchapul: json["ortiqchapul"] ?? 0,
     done: json["done"],
-    type: json["type"] ?? 0,
+    employee_id: json["employee_id"] ?? 0,
+    order_type: json["order_type"] ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -116,6 +119,7 @@ class Order {
     "summa_qarz": summaQarz,
     "ortiqchapul": ortiqchapul,
     "done": done,
-    "type": type,
+    "employee_id": employee_id,
+    "order_type": order_type,
   };
 }

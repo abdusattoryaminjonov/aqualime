@@ -412,7 +412,11 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> initData() async {
     updateKassa =  await httpService.httpKassa(employeeBox.values.first.id);
-    _ordersFuture = updateKassa == true ? httpService.fetch0Orders() : httpService.fetchOrders();
+
+    int xodimId =employeeBox.values.first.xodim_id;
+    _ordersFuture = updateKassa == true ? httpService.fetch0Orders(xodimId) : httpService.fetchOrders(xodimId);
+
+
     _ordersFuture!.then((ordersModel) async {
       final todayOrders = ordersModel.orders;
       final int zakazLength = todayOrders.length;
@@ -446,7 +450,7 @@ class _HomePageState extends State<HomePage> {
         0,
             (sum, order) {
           if (order.done != -1 && order.typeOfPayment == 'naqd') {
-            return sum + (int.tryParse(order.summaTolov.toString().trim() ?? '0') ?? 0);
+            return sum + (int.tryParse(order.summaTolov.toString().trim()) ?? 0);
           }
           return sum;
         },
@@ -456,7 +460,7 @@ class _HomePageState extends State<HomePage> {
         0,
             (sum, order) {
           if (order.done != -1 && order.typeOfPayment == 'karta') {
-            return sum + (int.tryParse(order.summaTolov.toString().trim() ?? '0') ?? 0);
+            return sum + (int.tryParse(order.summaTolov.toString().trim()) ?? 0);
           }
           return sum;
         },
@@ -471,21 +475,25 @@ class _HomePageState extends State<HomePage> {
       }
       final employee = employeeBox.values.first;
 
-      employee.tumanId = 1;
-      employee.zakaz = zakazLength;
+      employee.xodim_id = employee.xodim_id;
+      employee.zakaz =  zakazLength == 0 ? -1 : zakazLength ;
       employee.tarqatildi = tarqatildi;
       employee.atmen = atmen;
       employee.naqd = naxt;
       employee.karta = karta;
       employee.qarz = qarz;
       employee.ortiqchapul = ortiqchapul;
-      employee.kassa_sanasi = todayOrders.first.sana.toString();
+      if (todayOrders.isNotEmpty) {
+        employee.kassa_sanasi = todayOrders.first.sana.toString();
+      } else {
+        employee.kassa_sanasi = DateTime.now().toString();
+      }
 
       await employee.save();
 
       updatedUser = await httpService.updateEmployee(
         id: employee.id,
-        tuman_id: employee.tumanId,
+        xodim_id: employee.xodim_id,
         name: employee.name,
         password: employee.password,
         qarz: employee.qarz,
@@ -514,9 +522,11 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _refreshData() async {
     updateKassa = await httpService.httpKassa(employeeBox.values.first.id);
+    int xodimId =employeeBox.values.first.xodim_id;
 
     setState(() {
-      _ordersFuture = updateKassa == true ? httpService.fetch0Orders() : httpService.fetchOrders();
+      _ordersFuture = updateKassa == true ? httpService.fetch0Orders(xodimId) : httpService.fetchOrders(xodimId);
+
       _ordersFuture!.then((ordersModel) async {
         final todayOrders = ordersModel.orders;
         final int zakazLength = todayOrders.length;
@@ -550,7 +560,7 @@ class _HomePageState extends State<HomePage> {
           0,
               (sum, order) {
             if (order.done != -1 && order.typeOfPayment == 'naqd') {
-              return sum + (int.tryParse(order.summaTolov.toString().trim() ?? '0') ?? 0);
+              return sum + (int.tryParse(order.summaTolov.toString().trim()) ?? 0);
             }
             return sum;
           },
@@ -560,7 +570,7 @@ class _HomePageState extends State<HomePage> {
           0,
               (sum, order) {
             if (order.done != -1 && order.typeOfPayment == 'karta') {
-              return sum + (int.tryParse(order.summaTolov.toString().trim() ?? '0') ?? 0);
+              return sum + (int.tryParse(order.summaTolov.toString().trim()) ?? 0);
             }
             return sum;
           },
@@ -575,21 +585,25 @@ class _HomePageState extends State<HomePage> {
         }
         final employee = employeeBox.values.first;
 
-        employee.tumanId = 1;
-        employee.zakaz = zakazLength;
+        employee.xodim_id = employee.xodim_id;
+        employee.zakaz = zakazLength == 0 ? -1 : zakazLength ;
         employee.tarqatildi = tarqatildi;
         employee.atmen = atmen;
         employee.naqd = naxt;
         employee.karta = karta;
         employee.qarz = qarz;
         employee.ortiqchapul = ortiqchapul;
-        employee.kassa_sanasi = todayOrders.first.sana.toString();
+        if (todayOrders.isNotEmpty) {
+          employee.kassa_sanasi = todayOrders.first.sana.toString();
+        } else {
+          employee.kassa_sanasi = DateTime.now().toString();
+        }
 
         await employee.save();
 
         updatedUser = await httpService.updateEmployee(
           id: employee.id,
-          tuman_id: employee.tumanId,
+          xodim_id: employee.xodim_id,
           name: employee.name,
           password: employee.password,
           qarz: employee.qarz,
@@ -686,7 +700,7 @@ class _HomePageState extends State<HomePage> {
             );
           }
 
-          if (!snapshot.hasData || snapshot.data!.orders.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.orders.isEmpty && snapshot.data!.count < 0) {
             return  Scaffold(
               body: Center(
                 child: SizedBox(
@@ -695,7 +709,22 @@ class _HomePageState extends State<HomePage> {
                     child: Lottie.asset('assets/lotties/loading.json')),
               ),
             );
+          }else if(snapshot.data!.count == 0){
+            return  Scaffold(
+                body: Center(
+                  child: Text(
+                    "Sizda bugun zakazlar yo'q!",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent
+                    ),
+                  ),
+                )
+            );
           }
+
+
+
           final orders = snapshot.data!.orders;
           final doneZero = orders
               .where((o) => o.done == 0)
@@ -725,7 +754,7 @@ class _HomePageState extends State<HomePage> {
               ): SizedBox(height: 10),
 
               Expanded(
-                child: ListView.separated(
+                child:  ListView.separated(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   itemCount: todayOrders.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),

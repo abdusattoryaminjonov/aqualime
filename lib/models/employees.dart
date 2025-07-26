@@ -5,7 +5,7 @@ part 'employees.g.dart';
 @HiveType(typeId: 0)
 class Employee extends HiveObject {
   @HiveField(0)
-  int tumanId;
+  int xodim_id;
 
   @HiveField(1)
   String name;
@@ -44,7 +44,7 @@ class Employee extends HiveObject {
   int id;
 
   Employee({
-    required this.tumanId,
+    required this.xodim_id,
     required this.name,
     required this.password,
     this.zakaz = 0,
@@ -63,7 +63,7 @@ class Employee extends HiveObject {
   factory Employee.fromJson(Map<String, dynamic> json) {
     return Employee(
       id: json['id'],
-      tumanId: json['tuman_id'],
+      xodim_id: json['xodim_id'],
       name: json['name'] ?? '',
       password: json['password'] ?? '',
       zakaz: json['zakaz'] ?? 0,
