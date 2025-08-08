@@ -428,8 +428,9 @@ class _HomePageState extends State<HomePage> {
 
       final int tarqatildi1 = todayOrders.fold(
         0,
-            (sum, order) => order.done != -1 ? sum + order.water_count : sum,
+            (sum, order) => order.done != -1 ? sum + order.waterCount : sum,
       );
+
 
       final int atmen = todayOrders.fold(
         0,
@@ -538,7 +539,7 @@ class _HomePageState extends State<HomePage> {
 
         final int tarqatildi1 = todayOrders.fold(
           0,
-              (sum, order) => order.done != -1 ? sum + order.water_count : sum,
+              (sum, order) => order.done != -1 ? sum + order.waterCount : sum,
         );
 
         final int atmen = todayOrders.fold(
@@ -700,7 +701,7 @@ class _HomePageState extends State<HomePage> {
             );
           }
 
-          if (!snapshot.hasData || snapshot.data!.orders.isEmpty && snapshot.data!.count < 0) {
+          if (!snapshot.hasData || snapshot.data!.orders.isEmpty && snapshot.data!.ordersCount < 0) {
             return  Scaffold(
               body: Center(
                 child: SizedBox(
@@ -709,7 +710,7 @@ class _HomePageState extends State<HomePage> {
                     child: Lottie.asset('assets/lotties/loading.json')),
               ),
             );
-          }else if(snapshot.data!.count == 0){
+          }else if(snapshot.data!.ordersCount == 0){
             return  Scaffold(
                 body: Center(
                   child: Text(

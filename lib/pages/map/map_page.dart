@@ -37,6 +37,7 @@ class _MapPageState extends State<MapPage> {
 
   final Set<Marker> _markers = {};
   Order? selectedZakaz;
+  UserWithDefaultWater? selectedUser;
   double? selectedLat;
   double? selectedLng;
   LatLng get _latLng => _currentLocation != null
@@ -140,12 +141,16 @@ class _MapPageState extends State<MapPage> {
     final double markerHeight = 50;
     final double markerTop = 40;
 
-
-
-
-
     final Paint markerPaint = Paint()
-      ..color = done == 0 && type == 1 ? Colors.purple : done == 0 && type == 0 ? Colors.red : done == 1 ? Colors.blueAccent : Colors.orange;
+      ..color = type == 99
+          ? Colors.black // userlar uchun marker rangi
+          : done == 0 && type == 1
+          ? Colors.purple
+          : done == 0 && type == 0
+          ? Colors.red
+          : done == 1
+          ? Colors.blueAccent
+          : Colors.orange;
 
     const Radius radius = Radius.circular(15);
     canvas.drawRRect(
@@ -184,9 +189,9 @@ class _MapPageState extends State<MapPage> {
     );
 
     labelPainter.layout(maxWidth: markerWidth);
-    labelPainter.paint(canvas, Offset((width - labelPainter.width) / 2, markerTop + (markerHeight - labelPainter.height) / 2));
+    labelPainter.paint(
+        canvas, Offset((width - labelPainter.width) / 2, markerTop + (markerHeight - labelPainter.height) / 2));
 
-    // Rasmga aylantirish
     final ui.Image image = await recorder.endRecording().toImage(width.toInt(), height.toInt());
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return BitmapDescriptor.fromBytes(byteData!.buffer.asUint8List());
@@ -199,15 +204,12 @@ class _MapPageState extends State<MapPage> {
       final OrdersModel response = await httpService.fetchOrders(employeeBox.values.first.xodim_id);
 
       final List<Order> orders = response.orders;
-
-      LogService.i(orders.first.summa);
+      final List<UserWithDefaultWater> users = response.usersWithDefaultWater;
 
       for (var order in orders) {
-        if (order.done != asistent) continue; // faqat done == 0 larni ko‘rsatamiz
+        if (order.done != asistent) continue;
 
-        final String location = order.location;
-        final parts = location.split(',');
-
+        final parts = order.location.split(',');
         if (parts.length == 2) {
           final lat = double.tryParse(parts[0]);
           final lng = double.tryParse(parts[1]);
@@ -221,13 +223,12 @@ class _MapPageState extends State<MapPage> {
             );
 
             double distanceInKm = distanceInMeters / 1000;
-            String markerText = "${distanceInKm.toStringAsFixed(1)} km\n z${order.userId} ";
-            LogService.i(markerText);
+            String markerText = "${distanceInKm.toStringAsFixed(1)} km\n z${order.userId}";
 
             final BitmapDescriptor markerIcon = await createCustomMarkerBitmap(
               markerText,
               order.done,
-              order.order_type,
+              order.orderType,
             );
 
             _markers.add(
@@ -238,6 +239,7 @@ class _MapPageState extends State<MapPage> {
                 onTap: () {
                   setState(() {
                     selectedZakaz = order;
+                    selectedUser = null;
                     selectedLat = lat;
                     selectedLng = lng;
                   });
@@ -248,6 +250,47 @@ class _MapPageState extends State<MapPage> {
         }
       }
 
+      for (var user in users) {
+        final parts = user.location.split(',');
+        if (parts.length == 2) {
+          final lat = double.tryParse(parts[0]);
+          final lng = double.tryParse(parts[1]);
+
+          if (lat != null && lng != null) {
+            double distanceInMeters = Geolocator.distanceBetween(
+              _currentLocation!.latitude!,
+              _currentLocation!.longitude!,
+              lat,
+              lng,
+            );
+
+            double distanceInKm = distanceInMeters / 1000;
+            String markerText = "${distanceInKm.toStringAsFixed(1)} km\n u${user.id}";
+
+            final BitmapDescriptor markerIcon = await createCustomMarkerBitmap(
+              markerText,
+              0,
+              99,///Ko'rish kere
+            );
+
+            _markers.add(
+              Marker(
+                markerId: MarkerId('user_${user.id}'),
+                position: LatLng(lat, lng),
+                icon: markerIcon,
+                onTap: () {
+                  setState(() {
+                    selectedZakaz = null;
+                    selectedUser = user;
+                    selectedLat = lat;
+                    selectedLng = lng;
+                  });
+                },
+              ),
+            );
+          }
+        }
+      }
 
       setState(() {});
     } catch (e) {
@@ -344,69 +387,130 @@ class _MapPageState extends State<MapPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const SizedBox(height: 12),
-                                Text(
-                                  "Zakaz: ${selectedZakaz!.fish}",
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  "${_calculateDistanceToSelected() ?? '-'}",
-                                  style: TextStyle(
-                                    color: Colors.blueAccent,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+
+                                if (selectedZakaz != null) ...[
+                                  Text(
+                                    "Zakaz: ${selectedZakaz!.fish}",
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Text("Suv soni: ",style: TextStyle(fontWeight: FontWeight.bold)),
-                                    Text(
-                                      selectedZakaz!.givedBottle.toString(),
-                                      style: TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  Text(
+                                    "${_calculateDistanceToSelected() ?? '-'}",
+                                    style: TextStyle(
+                                      color: Colors.blueAccent,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                                    Text(" ta",style: TextStyle(fontSize: 16),),
-                                  ],
-                                ),
-                                SizedBox(height: 8),
-                                Text("Manzil:", style: TextStyle(fontWeight: FontWeight.bold)),
-                                Text(
-                                  selectedZakaz!.adress,
-                                  softWrap: true,
-                                  maxLines: null,
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    collToUser(selectedZakaz!.tel1,context);
-                                  },
-                                  icon: Icon(Icons.phone),
-                                  label: Text("${selectedZakaz!.tel1}"),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   ),
-                                ),
-                                SizedBox(width: 10),
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    collToUser(selectedZakaz!.tel2,context);
-                                  },
-                                  icon: Icon(Icons.phone),
-                                  label: Text("${selectedZakaz!.tel2}"),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Text("Suv soni: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      Text(
+                                        selectedZakaz!.givedBottle.toString(),
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(" ta", style: TextStyle(fontSize: 16)),
+                                    ],
                                   ),
-                                ),
+                                  SizedBox(height: 8),
+                                  Text("Manzil:", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(
+                                    selectedZakaz!.adress,
+                                    softWrap: true,
+                                    maxLines: null,
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: () => collToUser(selectedZakaz!.tel1, context),
+                                    icon: Icon(Icons.phone),
+                                    label: Text("${selectedZakaz!.tel1}"),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                  ElevatedButton.icon(
+                                    onPressed: () => collToUser(selectedZakaz!.tel2, context),
+                                    icon: Icon(Icons.phone),
+                                    label: Text("${selectedZakaz!.tel2}"),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  ),
+                                ],
+
+                                if (selectedUser != null) ...[
+                                  Text(
+                                    "Foydalanuvchi: ${selectedUser!.fish}",
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    "${_calculateDistanceToSelected() ?? '-'}",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Text("Default suv soni: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      Text(
+                                        selectedUser!.defaultWaterCount.toString(),
+                                        style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(" ta", style: TextStyle(fontSize: 16)),
+                                    ],
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text("Manzil:", style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(
+                                    selectedUser!.adress,
+                                    softWrap: true,
+                                    maxLines: null,
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: () => collToUser(selectedUser!.tel1, context),
+                                    icon: Icon(Icons.phone),
+                                    label: Text("${selectedUser!.tel1}"),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.black,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                  ElevatedButton.icon(
+                                    onPressed: () => collToUser(selectedUser!.tel2, context),
+                                    icon: Icon(Icons.phone),
+                                    label: Text("${selectedUser!.tel2}"),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.black,
+                                      foregroundColor: Colors.white,
+                                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                    ),
+                                  ),
+                                ]
                               ],
                             ),
                           ),
