@@ -102,7 +102,7 @@ class Order {
   factory Order.fromJson(Map<String, dynamic> json) => Order(
     id: json["id"],
     userId: json["user_id"],
-    chatId: json["chat_id"],
+    chatId: json["chat_id"] ?? 0,
     fish: json["fish"] ?? "",
     location: json["location"] ?? "",
     adress: json["adress"] ?? "",
